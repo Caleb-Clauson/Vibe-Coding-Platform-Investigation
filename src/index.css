@@ -129,11 +129,31 @@ p {
   margin-top: 8px;
 }
 
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.section-note {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
 .survey-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: 24px;
   align-items: start;
+}
+
+.survey-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
 }
 
 .card {

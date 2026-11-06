@@ -8,6 +8,7 @@ interface MeasurementContextValue {
   addMeasurement: (input: MeasurementInput) => void;
   updateMeasurement: (id: string, input: MeasurementInput) => void;
   deleteMeasurement: (id: string) => void;
+  replaceMeasurements: (next: Measurement[]) => void;
 }
 
 const MeasurementContext = createContext<MeasurementContextValue | null>(null);
@@ -36,6 +37,7 @@ export function MeasurementProvider({ children }: { children: ReactNode }) {
         ),
       deleteMeasurement: (id) =>
         setMeasurements((previous) => previous.filter((measurement) => measurement.id !== id)),
+      replaceMeasurements: (next) => setMeasurements(next),
     }),
     [measurements, storageError],
   );
