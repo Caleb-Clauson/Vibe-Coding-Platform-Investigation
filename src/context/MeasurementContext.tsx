@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Measurement, MeasurementInput } from '../types';
+import type { Measurement, MeasurementInput, WiFiFinding } from '../types';
+import { APPROVED_ACCESS_POINTS } from '../data/demoSurvey';
 import { loadMeasurements, saveMeasurements } from '../lib/measurementStorage';
+import { analyzeWifiMeasurements } from '../lib/wifiAnalysis';
 
 interface MeasurementContextValue {
   measurements: Measurement[];
+  findings: WiFiFinding[];
   storageError: boolean;
   addMeasurement: (input: MeasurementInput) => void;
   updateMeasurement: (id: string, input: MeasurementInput) => void;
@@ -20,6 +23,10 @@ function createId(): string {
 export function MeasurementProvider({ children }: { children: ReactNode }) {
   const [measurements, setMeasurements] = useState<Measurement[]>(loadMeasurements);
   const [storageError, setStorageError] = useState(false);
+  const findings = useMemo(
+    () => analyzeWifiMeasurements(measurements, APPROVED_ACCESS_POINTS),
+    [measurements],
+  );
 
   useEffect(() => {
     setStorageError(!saveMeasurements(measurements));
@@ -28,6 +35,7 @@ export function MeasurementProvider({ children }: { children: ReactNode }) {
   const value = useMemo<MeasurementContextValue>(
     () => ({
       measurements,
+      findings,
       storageError,
       addMeasurement: (input) =>
         setMeasurements((previous) => [...previous, { id: createId(), ...input }]),
@@ -39,7 +47,7 @@ export function MeasurementProvider({ children }: { children: ReactNode }) {
         setMeasurements((previous) => previous.filter((measurement) => measurement.id !== id)),
       replaceMeasurements: (next) => setMeasurements(next),
     }),
-    [measurements, storageError],
+    [measurements, findings, storageError],
   );
 
   return <MeasurementContext.Provider value={value}>{children}</MeasurementContext.Provider>;
