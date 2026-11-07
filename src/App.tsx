@@ -15,7 +15,7 @@ const SECTIONS: { id: SectionId; label: string; description: string }[] = [
   {
     id: 'findings',
     label: 'Findings',
-    description: 'Flag weak signal, crowded channels, and coverage gaps found in the survey readings.',
+    description: 'Review indoor signal strength, possible parking-lot signal leakage, and unrecognized access points.',
   },
   {
     id: 'fix-report',

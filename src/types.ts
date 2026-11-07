@@ -14,3 +14,22 @@ export interface Measurement {
 }
 
 export type MeasurementInput = Omit<Measurement, 'id'>;
+
+export type WiFiFindingType =
+  | 'weak-indoor-signal'
+  | 'fair-indoor-signal'
+  | 'possible-signal-leakage'
+  | 'unrecognized-access-point';
+
+export type FindingSeverity = 'high' | 'medium' | 'low';
+
+export interface WiFiFinding {
+  /** Stable for the same issue type and normalized BSSID across survey edits. */
+  id: string;
+  type: WiFiFindingType;
+  severity: FindingSeverity;
+  title: string;
+  description: string;
+  affectedMeasurementIds: string[];
+  recommendations: string[];
+}
