@@ -1,36 +1,25 @@
 import { useState } from 'react';
-import { MeasurementProvider, useMeasurements } from './context/MeasurementContext';
+import { MeasurementProvider } from './context/MeasurementContext';
 import { SurveySection } from './sections/SurveySection';
-import { PlaceholderSection } from './sections/PlaceholderSection';
+import { MapSection } from './sections/MapSection';
+import { FindingsSection } from './sections/FindingsSection';
+import { FixReportSection } from './sections/FixReportSection';
 
 type SectionId = 'survey' | 'map' | 'findings' | 'fix-report';
 
-const SECTIONS: { id: SectionId; label: string; description: string }[] = [
-  { id: 'survey', label: 'Survey', description: '' },
-  {
-    id: 'map',
-    label: 'Map',
-    description: 'Plot each reading on a floor-style map using its horizontal and vertical position.',
-  },
-  {
-    id: 'findings',
-    label: 'Findings',
-    description: 'Review indoor signal strength, possible parking-lot signal leakage, and unrecognized access points.',
-  },
-  {
-    id: 'fix-report',
-    label: 'Fix Report',
-    description: 'Summarize recommended fixes, such as access point placement, in a shareable report.',
-  },
+const SECTIONS: { id: SectionId; label: string }[] = [
+  { id: 'survey', label: 'Survey' },
+  { id: 'map', label: 'Map' },
+  { id: 'findings', label: 'Findings' },
+  { id: 'fix-report', label: 'Fix Report' },
 ];
 
 function AppShell() {
   const [activeId, setActiveId] = useState<SectionId>('survey');
-  const { measurements } = useMeasurements();
 
   return (
     <div className="app">
-      <header className="app-header">
+      <header className="app-header no-print">
         <div className="container app-header-inner">
           <div>
             <h1 className="app-title">SignalSafe</h1>
@@ -57,15 +46,10 @@ function AppShell() {
       </header>
 
       <main className="container main-content">
-        {activeId === 'survey' ? (
-          <SurveySection />
-        ) : (
-          <PlaceholderSection
-            title={SECTIONS.find((section) => section.id === activeId)?.label ?? ''}
-            description={SECTIONS.find((section) => section.id === activeId)?.description ?? ''}
-            readingCount={measurements.length}
-          />
-        )}
+        {activeId === 'survey' && <SurveySection />}
+        {activeId === 'map' && <MapSection />}
+        {activeId === 'findings' && <FindingsSection />}
+        {activeId === 'fix-report' && <FixReportSection />}
       </main>
     </div>
   );

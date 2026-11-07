@@ -18,13 +18,12 @@ This is a demonstration. It uses sample, demo, or user-entered measurements only
 - **Saving:** readings persist across page refreshes using browser local storage. A warning appears if the browser blocks saving.
 - **Sample data:** one clearly fictional reading ("SAMPLE: Front lobby (fictional)") is included for first-time testing.
 
-## Remaining placeholders
-
-- **Map:** will plot readings on a floor-style map.
-- **Findings:** will flag weak signal, crowded channels, and coverage gaps.
-- **Fix Report:** will summarize recommended fixes in a shareable report.
-
-These sections currently show a "Coming in a later version" message and the number of readings available to them.
+- **Map:** plots each reading on a floor-style map, colored by signal strength (good, fair, or weak). Unrecognized access points appear as diamonds.
+- **Findings:** lists weak and fair indoor signal, possible parking-lot leakage, and unrecognized access points, sorted by priority, with affected readings and recommended actions.
+- **Fix Report:** a printable summary of findings, recommended fixes, approved access points, and all readings. Use Print to save it as a PDF.
+- **Shared data:** one measurement list is used by every section.
+- **Saving:** readings persist across page refreshes using browser local storage. A warning appears if the browser blocks saving.
+- **Sample data:** one clearly fictional reading ("SAMPLE: Front lobby (fictional)") is included for first-time testing.
 
 ## Running the project
 
@@ -40,7 +39,9 @@ To build for production, run `npm run build`.
 - `src/App.tsx`: navigation and section layout.
 - `src/context/MeasurementContext.tsx`: shared measurement data and saving.
 - `src/data/demoSurvey.ts`: fictional demo readings, approved access point inventory, and demo detection.
-- `src/lib/`: validation rules and local storage helpers.
-- `src/sections/`: the Survey section and placeholder sections.
+- `src/lib/`: validation rules, Wi-Fi analysis, finding presentation, and local storage helpers.
+- `src/sections/`: the Survey, Map, Findings, and Fix Report sections.
 - `src/survey/`: the reading form, reading list, and approved access point inventory.
+- `src/map/`: the floor map drawing.
+- `src/findings/`: the finding card shown in Findings and the Fix Report.
 - `src/index.css`: app styling.
