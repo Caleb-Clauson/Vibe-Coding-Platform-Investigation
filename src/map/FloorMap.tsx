@@ -1,5 +1,6 @@
 import type { Measurement } from '../types';
 import { WIFI_THRESHOLDS } from '../lib/wifiAnalysis';
+import type { MapPoint } from '../lib/signalEstimate';
 
 export const SIGNAL_TONES = {
   good: { color: '#15803d', label: `Good: better than ${WIFI_THRESHOLDS.fairIndoorMaxDbm} dBm` },
@@ -24,26 +25,59 @@ const PADDING = 20;
 const BUILDING_BOTTOM = 440;
 const BLOB_RADIUS = 170;
 const MARKER_RADIUS = 12;
+const HOVERED_MARKER_RADIUS = 15;
+const LABEL_RIGHT_EDGE = WIDTH * 0.8;
+const USER_PIN_RADIUS = 10;
 
-function toPoint(measurement: Measurement) {
+function toPixel(point: MapPoint) {
   return {
-    cx: PADDING + (measurement.x / 100) * (WIDTH - PADDING * 2),
-    cy: PADDING + (measurement.y / 100) * (HEIGHT - PADDING * 2),
+    cx: PADDING + (point.x / 100) * (WIDTH - PADDING * 2),
+    cy: PADDING + (point.y / 100) * (HEIGHT - PADDING * 2),
   };
+}
+
+function toMapPoint(svg: SVGSVGElement, clientX: number, clientY: number): MapPoint {
+  const rect = svg.getBoundingClientRect();
+  const svgX = ((clientX - rect.left) / rect.width) * WIDTH;
+  const svgY = ((clientY - rect.top) / rect.height) * HEIGHT;
+  const clamp = (value: number) => Math.min(100, Math.max(0, value));
+  return {
+    x: clamp(((svgX - PADDING) / (WIDTH - PADDING * 2)) * 100),
+    y: clamp(((svgY - PADDING) / (HEIGHT - PADDING * 2)) * 100),
+  };
+}
+
+export function markerPosition(point: MapPoint): { left: string; top: string } {
+  const { cx, cy } = toPixel(point);
+  return { left: `${(cx / WIDTH) * 100}%`, top: `${(cy / HEIGHT) * 100}%` };
 }
 
 interface FloorMapProps {
   measurements: readonly Measurement[];
   unrecognizedIds: ReadonlySet<string>;
+  hoveredId: string | null;
+  onHover: (id: string | null) => void;
+  userPoint: MapPoint | null;
+  onPickPoint: (point: MapPoint) => void;
 }
 
-export function FloorMap({ measurements, unrecognizedIds }: FloorMapProps) {
+export function FloorMap({
+  measurements,
+  unrecognizedIds,
+  hoveredId,
+  onHover,
+  userPoint,
+  onPickPoint,
+}: FloorMapProps) {
   return (
     <svg
-      className="floor-map"
+      className="floor-map floor-map-interactive"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
       aria-label="Floor map showing each Wi-Fi reading at its position and colored by signal strength"
+      onClick={(event) =>
+        onPickPoint(toMapPoint(event.currentTarget, event.clientX, event.clientY))
+      }
     >
       <defs>
         {(Object.keys(SIGNAL_TONES) as SignalTone[]).map((tone) => (
@@ -61,9 +95,9 @@ export function FloorMap({ measurements, unrecognizedIds }: FloorMapProps) {
       <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="#e2e8f0" stroke="#94a3b8" strokeWidth="4" />
       <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="url(#lot-lines)" opacity={0.6} />
 
-      <g aria-hidden="true">
+      <g aria-hidden="true" pointerEvents="none">
         {measurements.map((measurement) => {
-          const { cx, cy } = toPoint(measurement);
+          const { cx, cy } = toPixel(measurement);
           return (
             <circle
               key={measurement.id}
@@ -80,25 +114,69 @@ export function FloorMap({ measurements, unrecognizedIds }: FloorMapProps) {
       <text x={PADDING + 16} y={BUILDING_BOTTOM + 40} fontSize="22" fontWeight="600" fill="#334155">PARKING LOT</text>
 
       {measurements.map((measurement) => {
-        const { cx, cy } = toPoint(measurement);
+        const { cx, cy } = toPixel(measurement);
         const color = SIGNAL_TONES[signalTone(measurement.signalDbm)].color;
         const label = `${measurement.locationName}: ${measurement.signalDbm} dBm (${measurement.ssid})`;
+        const radius = measurement.id === hoveredId ? HOVERED_MARKER_RADIUS : MARKER_RADIUS;
         return (
-          <g key={measurement.id}>
+          <g
+            key={measurement.id}
+            onPointerEnter={() => onHover(measurement.id)}
+            onPointerLeave={() => onHover(null)}
+          >
             <title>{label}</title>
             {unrecognizedIds.has(measurement.id) ? (
               <polygon
-                points={`${cx},${cy - MARKER_RADIUS - 2} ${cx + MARKER_RADIUS + 2},${cy} ${cx},${cy + MARKER_RADIUS + 2} ${cx - MARKER_RADIUS - 2},${cy}`}
+                points={`${cx},${cy - radius - 2} ${cx + radius + 2},${cy} ${cx},${cy + radius + 2} ${cx - radius - 2},${cy}`}
                 fill={color}
                 stroke="#0f172a"
                 strokeWidth="3"
               />
             ) : (
-              <circle cx={cx} cy={cy} r={MARKER_RADIUS} fill={color} stroke="#ffffff" strokeWidth="4" />
+              <circle cx={cx} cy={cy} r={radius} fill={color} stroke="#ffffff" strokeWidth="4" />
             )}
           </g>
         );
       })}
+
+      <g pointerEvents="none" aria-hidden="true">
+        {measurements.map((measurement) => {
+          const { cx, cy } = toPixel(measurement);
+          const onLeft = cx > LABEL_RIGHT_EDGE;
+          return (
+            <text
+              key={measurement.id}
+              x={onLeft ? cx - MARKER_RADIUS - 8 : cx + MARKER_RADIUS + 8}
+              y={cy + 6}
+              textAnchor={onLeft ? 'end' : 'start'}
+              fontSize="20"
+              fontWeight="600"
+              fill="#0f172a"
+              stroke="#ffffff"
+              strokeWidth="5"
+              paintOrder="stroke"
+            >
+              {measurement.locationName}
+            </text>
+          );
+        })}
+      </g>
+
+      {userPoint && (
+        <g pointerEvents="none" aria-hidden="true">
+          <UserPin point={userPoint} />
+        </g>
+      )}
     </svg>
+  );
+}
+
+function UserPin({ point }: { point: MapPoint }) {
+  const { cx, cy } = toPixel(point);
+  return (
+    <>
+      <circle className="user-pin-pulse" cx={cx} cy={cy} r={28} />
+      <circle cx={cx} cy={cy} r={USER_PIN_RADIUS} fill="#1e5eb8" stroke="#ffffff" strokeWidth="4" />
+    </>
   );
 }

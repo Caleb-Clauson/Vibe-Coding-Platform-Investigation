@@ -18,7 +18,7 @@ This is a demonstration. It uses sample, demo, or user-entered measurements only
 - **Saving:** readings persist across page refreshes using browser local storage. A warning appears if the browser blocks saving.
 - **Sample data:** one clearly fictional reading ("SAMPLE: Front lobby (fictional)") is included for first-time testing.
 
-- **Map:** plots each reading on a floor-style map, colored by signal strength (good, fair, or weak). Unrecognized access points appear as diamonds.
+- **Map:** plots each reading on a floor-style map, colored by signal strength (good, fair, or weak). Unrecognized access points appear as diamonds. Each reading is labeled on the map, hovering a reading shows its details, and clicking the map places a "Your location" marker with the estimated signal strength at that spot.
 - **Findings:** lists weak and fair indoor signal, possible parking-lot leakage, and unrecognized access points, sorted by priority, with affected readings and recommended actions.
 - **Fix Report:** a printable summary of findings, recommended fixes, approved access points, and all readings. Use Print to save it as a PDF.
 - **Shared data:** one measurement list is used by every section.

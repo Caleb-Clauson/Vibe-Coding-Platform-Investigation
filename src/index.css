@@ -399,6 +399,90 @@ p {
   transform: rotate(45deg) scale(0.85);
 }
 
+.legend-you {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.floor-map-frame {
+  position: relative;
+}
+
+.floor-map-interactive {
+  cursor: crosshair;
+}
+
+.user-pin-pulse {
+  fill: rgba(30, 94, 184, 0.25);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: user-pin-pulse 1.6s ease-out infinite;
+}
+
+@keyframes user-pin-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.floor-tooltip {
+  position: absolute;
+  z-index: 2;
+  width: max-content;
+  max-width: 260px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.875rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 20px));
+}
+
+.floor-tooltip-start {
+  transform: translate(-12px, calc(-100% - 20px));
+}
+
+.floor-tooltip-end {
+  transform: translate(calc(-100% + 12px), calc(-100% - 20px));
+}
+
+.floor-tooltip p + p {
+  margin-top: 4px;
+}
+
+.floor-tooltip-title {
+  font-weight: 600;
+}
+
+.floor-tooltip-meta {
+  color: #cbd5e1;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.user-location-reading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-location-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
 .finding-list {
   list-style: none;
   padding: 0;
