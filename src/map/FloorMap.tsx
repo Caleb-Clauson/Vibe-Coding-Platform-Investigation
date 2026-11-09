@@ -20,12 +20,12 @@ export function signalTone(signalDbm: number): SignalTone {
 }
 
 const WIDTH = 1000;
-const HEIGHT = 600;
+const HEIGHT = 780;
 const PADDING = 20;
-const BUILDING_BOTTOM = 440;
-const BLOB_RADIUS = 170;
-const MARKER_RADIUS = 12;
-const HOVERED_MARKER_RADIUS = 15;
+const BUILDING_BOTTOM = 572;
+const BLOB_RADIUS = 220;
+const MARKER_RADIUS = 17;
+const HOVERED_MARKER_RADIUS = 21;
 const LABEL_RIGHT_EDGE = WIDTH * 0.8;
 const USER_PIN_RADIUS = 10;
 
@@ -82,7 +82,7 @@ export function FloorMap({
       <defs>
         {(Object.keys(SIGNAL_TONES) as SignalTone[]).map((tone) => (
           <radialGradient id={`heat-${tone}`} key={tone}>
-            <stop offset="0%" stopColor={SIGNAL_TONES[tone].color} stopOpacity={0.5} />
+            <stop offset="0%" stopColor={SIGNAL_TONES[tone].color} stopOpacity={0.6} />
             <stop offset="100%" stopColor={SIGNAL_TONES[tone].color} stopOpacity={0} />
           </radialGradient>
         ))}
@@ -143,20 +143,21 @@ export function FloorMap({
         {measurements.map((measurement) => {
           const { cx, cy } = toPixel(measurement);
           const onLeft = cx > LABEL_RIGHT_EDGE;
+          const x = onLeft ? cx - MARKER_RADIUS - 10 : cx + MARKER_RADIUS + 10;
           return (
             <text
               key={measurement.id}
-              x={onLeft ? cx - MARKER_RADIUS - 8 : cx + MARKER_RADIUS + 8}
-              y={cy + 6}
+              x={x}
+              y={cy - 2}
               textAnchor={onLeft ? 'end' : 'start'}
-              fontSize="20"
-              fontWeight="600"
+              fontSize="24"
               fill="#0f172a"
               stroke="#ffffff"
-              strokeWidth="5"
+              strokeWidth="6"
               paintOrder="stroke"
             >
-              {measurement.locationName}
+              <tspan x={x} fontWeight="600">{measurement.locationName}</tspan>
+              <tspan x={x} dy="28" fontWeight="700">{measurement.signalDbm} dBm</tspan>
             </text>
           );
         })}
