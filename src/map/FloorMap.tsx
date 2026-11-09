@@ -3,6 +3,8 @@ import type { Measurement } from '../types';
 import { WIFI_THRESHOLDS } from '../lib/wifiAnalysis';
 import type { MapPoint } from '../lib/signalEstimate';
 import { HEAT_CELL_STEP, buildHeatCells } from '../lib/heatmapGrid';
+import { ROOM_LABELS, WALLS } from './floorLayout';
+import { heatColor } from './heatColor';
 
 export const SIGNAL_TONES = {
   good: { color: '#15803d', label: `Good: better than ${WIFI_THRESHOLDS.fairIndoorMaxDbm} dBm` },
@@ -25,6 +27,9 @@ const WIDTH = 1000;
 const HEIGHT = 780;
 const PADDING = 20;
 const BUILDING_BOTTOM = 572;
+const WALL_WIDTH = 8;
+const LABEL_HEIGHT = 34;
+const LABEL_CHAR_WIDTH = 15;
 const MARKER_RADIUS = 17;
 const HOVERED_MARKER_RADIUS = 21;
 const LABEL_RIGHT_EDGE = WIDTH * 0.8;
@@ -75,28 +80,51 @@ export function FloorMap({
       className="floor-map floor-map-interactive"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
-      aria-label="Floor map showing each Wi-Fi reading at its position and colored by signal strength"
+      aria-label="Floor map showing estimated Wi-Fi signal across the floor, with each reading at its position"
       onClick={(event) =>
         onPickPoint(toMapPoint(event.currentTarget, event.clientX, event.clientY))
       }
     >
       <defs>
         <filter id="heat-blur" x="-5%" y="-5%" width="110%" height="110%">
-          <feGaussianBlur stdDeviation="14" />
+          <feGaussianBlur stdDeviation="16" />
         </filter>
         <pattern id="lot-lines" width="56" height="56" patternUnits="userSpaceOnUse">
-          <path d="M0 56 L28 0" stroke="#94a3b8" strokeWidth="3" />
+          <path d="M0 56 L28 0" stroke="#ffffff" strokeWidth="5" />
         </pattern>
       </defs>
 
-      <rect x={PADDING} y={PADDING} width={WIDTH - PADDING * 2} height={BUILDING_BOTTOM - PADDING} fill="#f8fafc" stroke="#94a3b8" strokeWidth="4" />
-      <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="#e2e8f0" stroke="#94a3b8" strokeWidth="4" />
-      <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="url(#lot-lines)" opacity={0.6} />
+      <rect x={PADDING} y={PADDING} width={WIDTH - PADDING * 2} height={BUILDING_BOTTOM - PADDING} fill="#f1f5f9" />
+      <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="#64748b" />
 
       <HeatLayer measurements={measurements} />
 
-      <text x={PADDING + 16} y={PADDING + 40} fontSize="22" fontWeight="600" fill="#334155">INDOOR</text>
-      <text x={PADDING + 16} y={BUILDING_BOTTOM + 40} fontSize="22" fontWeight="600" fill="#334155">PARKING LOT</text>
+      <g aria-hidden="true" pointerEvents="none" stroke="#ffffff" strokeWidth={WALL_WIDTH} strokeLinecap="square">
+        {WALLS.map((wall) => {
+          const start = toPixel({ x: wall.x1, y: wall.y1 });
+          const end = toPixel({ x: wall.x2, y: wall.y2 });
+          return <line key={`${wall.x1}-${wall.y1}-${wall.x2}-${wall.y2}`} x1={start.cx} y1={start.cy} x2={end.cx} y2={end.cy} />;
+        })}
+      </g>
+
+      <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="url(#lot-lines)" opacity={0.7} pointerEvents="none" />
+      <rect x={PADDING} y={PADDING} width={WIDTH - PADDING * 2} height={HEIGHT - PADDING * 2} fill="none" stroke="#1e293b" strokeWidth="6" pointerEvents="none" />
+      <line x1={PADDING} y1={BUILDING_BOTTOM} x2={WIDTH - PADDING} y2={BUILDING_BOTTOM} stroke="#1e293b" strokeWidth="6" pointerEvents="none" />
+
+      <g aria-hidden="true" pointerEvents="none">
+        {ROOM_LABELS.map((room) => {
+          const { cx, cy } = toPixel(room);
+          const width = room.text.length * LABEL_CHAR_WIDTH + 24;
+          return (
+            <g key={room.text}>
+              <rect x={cx + 8} y={cy + 8} width={width} height={LABEL_HEIGHT} rx={6} fill="#ffffff" opacity={0.92} />
+              <text x={cx + 20} y={cy + 8 + LABEL_HEIGHT / 2} dominantBaseline="central" fontSize="18" fontWeight="700" fill="#0f172a">
+                {room.text}
+              </text>
+            </g>
+          );
+        })}
+      </g>
 
       {measurements.map((measurement) => {
         const { cx, cy } = toPixel(measurement);
@@ -163,7 +191,7 @@ const HeatLayer = memo(function HeatLayer({ measurements }: { measurements: read
   const cellHeight = ((HEIGHT - PADDING * 2) * HEAT_CELL_STEP) / 100;
 
   return (
-    <g aria-hidden="true" pointerEvents="none" filter="url(#heat-blur)" opacity={0.7}>
+    <g aria-hidden="true" pointerEvents="none" filter="url(#heat-blur)" opacity={0.85}>
       {cells.map((cell) => {
         const { cx, cy } = toPixel(cell);
         return (
@@ -173,7 +201,7 @@ const HeatLayer = memo(function HeatLayer({ measurements }: { measurements: read
             y={cy - cellHeight / 2}
             width={cellWidth}
             height={cellHeight}
-            fill={SIGNAL_TONES[signalTone(cell.signalDbm)].color}
+            fill={heatColor(cell.signalDbm)}
           />
         );
       })}
