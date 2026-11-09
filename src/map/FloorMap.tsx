@@ -1,6 +1,8 @@
+import { memo, useMemo } from 'react';
 import type { Measurement } from '../types';
 import { WIFI_THRESHOLDS } from '../lib/wifiAnalysis';
 import type { MapPoint } from '../lib/signalEstimate';
+import { HEAT_CELL_STEP, buildHeatCells } from '../lib/heatmapGrid';
 
 export const SIGNAL_TONES = {
   good: { color: '#15803d', label: `Good: better than ${WIFI_THRESHOLDS.fairIndoorMaxDbm} dBm` },
@@ -23,7 +25,6 @@ const WIDTH = 1000;
 const HEIGHT = 780;
 const PADDING = 20;
 const BUILDING_BOTTOM = 572;
-const BLOB_RADIUS = 220;
 const MARKER_RADIUS = 17;
 const HOVERED_MARKER_RADIUS = 21;
 const LABEL_RIGHT_EDGE = WIDTH * 0.8;
@@ -80,12 +81,9 @@ export function FloorMap({
       }
     >
       <defs>
-        {(Object.keys(SIGNAL_TONES) as SignalTone[]).map((tone) => (
-          <radialGradient id={`heat-${tone}`} key={tone}>
-            <stop offset="0%" stopColor={SIGNAL_TONES[tone].color} stopOpacity={0.6} />
-            <stop offset="100%" stopColor={SIGNAL_TONES[tone].color} stopOpacity={0} />
-          </radialGradient>
-        ))}
+        <filter id="heat-blur" x="-5%" y="-5%" width="110%" height="110%">
+          <feGaussianBlur stdDeviation="14" />
+        </filter>
         <pattern id="lot-lines" width="56" height="56" patternUnits="userSpaceOnUse">
           <path d="M0 56 L28 0" stroke="#94a3b8" strokeWidth="3" />
         </pattern>
@@ -95,20 +93,7 @@ export function FloorMap({
       <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="#e2e8f0" stroke="#94a3b8" strokeWidth="4" />
       <rect x={PADDING} y={BUILDING_BOTTOM} width={WIDTH - PADDING * 2} height={HEIGHT - BUILDING_BOTTOM - PADDING} fill="url(#lot-lines)" opacity={0.6} />
 
-      <g aria-hidden="true" pointerEvents="none">
-        {measurements.map((measurement) => {
-          const { cx, cy } = toPixel(measurement);
-          return (
-            <circle
-              key={measurement.id}
-              cx={cx}
-              cy={cy}
-              r={BLOB_RADIUS}
-              fill={`url(#heat-${signalTone(measurement.signalDbm)})`}
-            />
-          );
-        })}
-      </g>
+      <HeatLayer measurements={measurements} />
 
       <text x={PADDING + 16} y={PADDING + 40} fontSize="22" fontWeight="600" fill="#334155">INDOOR</text>
       <text x={PADDING + 16} y={BUILDING_BOTTOM + 40} fontSize="22" fontWeight="600" fill="#334155">PARKING LOT</text>
@@ -171,6 +156,30 @@ export function FloorMap({
     </svg>
   );
 }
+
+const HeatLayer = memo(function HeatLayer({ measurements }: { measurements: readonly Measurement[] }) {
+  const cells = useMemo(() => buildHeatCells(measurements), [measurements]);
+  const cellWidth = ((WIDTH - PADDING * 2) * HEAT_CELL_STEP) / 100;
+  const cellHeight = ((HEIGHT - PADDING * 2) * HEAT_CELL_STEP) / 100;
+
+  return (
+    <g aria-hidden="true" pointerEvents="none" filter="url(#heat-blur)" opacity={0.7}>
+      {cells.map((cell) => {
+        const { cx, cy } = toPixel(cell);
+        return (
+          <rect
+            key={`${cell.x}-${cell.y}`}
+            x={cx - cellWidth / 2}
+            y={cy - cellHeight / 2}
+            width={cellWidth}
+            height={cellHeight}
+            fill={SIGNAL_TONES[signalTone(cell.signalDbm)].color}
+          />
+        );
+      })}
+    </g>
+  );
+});
 
 function UserPin({ point }: { point: MapPoint }) {
   const { cx, cy } = toPixel(point);

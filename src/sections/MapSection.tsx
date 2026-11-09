@@ -32,7 +32,7 @@ export function MapSection() {
     <section className="section-stack" aria-labelledby="map-heading">
       <header className="section-header">
         <h2 id="map-heading">Floor map</h2>
-        <p>Each reading appears at its saved position. Hover over a reading for details, or click the map to see the estimated signal at that spot.</p>
+        <p>Colors show the estimated signal across the floor, based on your readings. Hover over a reading for details, or click the map to see the estimated signal at that spot.</p>
       </header>
 
       {measurements.length === 0 ? (
