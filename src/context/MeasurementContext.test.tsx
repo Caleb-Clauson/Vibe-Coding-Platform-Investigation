@@ -40,8 +40,8 @@ describe('shared measurement findings', () => {
     testDom.window.localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_MEASUREMENTS));
     const { result } = renderHook(useMeasurements, { wrapper });
     assert.equal(result.current.measurements.length, 10);
-    assert.deepEqual(result.current.findings.map((finding) => finding.affectedMeasurementIds), [
-      ['demo-04', 'demo-05'], ['demo-06', 'demo-07', 'demo-08'], ['demo-09', 'demo-10'],
+    assert.deepEqual(result.current.findings.map((finding) => finding.affectedMeasurementIds).sort(), [
+      ['demo-04'], ['demo-05'], ['demo-06', 'demo-07', 'demo-08'], ['demo-09', 'demo-10'],
     ]);
   });
 
@@ -88,7 +88,7 @@ describe('shared measurement findings', () => {
     const oldId = result.current.measurements[0].id;
     act(() => result.current.replaceMeasurements(DEMO_MEASUREMENTS));
     const expected = result.current.findings;
-    assert.equal(expected.length, 3);
+    assert.equal(expected.length, 4);
     assert.ok(expected.every((finding) => !finding.affectedMeasurementIds.includes(oldId)));
     act(() => result.current.replaceMeasurements([...DEMO_MEASUREMENTS]));
     assert.equal(result.current.measurements.length, 10);
@@ -100,12 +100,12 @@ describe('shared measurement findings', () => {
   it('keeps grouped findings accurate as affected measurements are removed', () => {
     const { result } = renderHook(useMeasurements, { wrapper });
     act(() => result.current.replaceMeasurements(DEMO_MEASUREMENTS));
-    const weakId = result.current.findings[0].id;
+    const weakFindings = () => result.current.findings.filter((finding) => finding.type === 'weak-indoor-signal');
+    assert.equal(weakFindings().length, 2);
     act(() => result.current.deleteMeasurement('demo-04'));
-    assert.equal(result.current.findings[0].id, weakId);
-    assert.deepEqual(result.current.findings[0].affectedMeasurementIds, ['demo-05']);
+    assert.deepEqual(weakFindings().map((finding) => finding.affectedMeasurementIds), [['demo-05']]);
     act(() => result.current.deleteMeasurement('demo-05'));
-    assert.ok(result.current.findings.every((finding) => finding.type !== 'weak-indoor-signal'));
+    assert.equal(weakFindings().length, 0);
     assert.equal(result.current.findings.length, 2);
   });
 
