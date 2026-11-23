@@ -4,14 +4,17 @@ import { SurveySection } from './sections/SurveySection';
 import { MapSection } from './sections/MapSection';
 import { FindingsSection } from './sections/FindingsSection';
 import { FixReportSection } from './sections/FixReportSection';
+import { ComparisonSection } from './sections/ComparisonSection';
+import './sections/comparison.css';
 
-type SectionId = 'survey' | 'map' | 'findings' | 'fix-report';
+type SectionId = 'survey' | 'map' | 'findings' | 'fix-report' | 'compare';
 
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'survey', label: 'Survey' },
   { id: 'map', label: 'Map' },
   { id: 'findings', label: 'Findings' },
   { id: 'fix-report', label: 'Fix Report' },
+  { id: 'compare', label: 'Compare Surveys' },
 ];
 
 function AppShell() {
@@ -50,6 +53,7 @@ function AppShell() {
         {activeId === 'map' && <MapSection />}
         {activeId === 'findings' && <FindingsSection />}
         {activeId === 'fix-report' && <FixReportSection />}
+        <div hidden={activeId !== 'compare'}><ComparisonSection /></div>
       </main>
     </div>
   );

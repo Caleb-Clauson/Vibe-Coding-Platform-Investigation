@@ -1,0 +1,25 @@
+.comparison-hero { padding: 32px; border-radius: 16px; color: white; background: linear-gradient(120deg, #102c4b, #135363); display: grid; gap: 14px; }
+.comparison-hero h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); max-width: 720px; }
+.comparison-hero p { max-width: 680px; color: #e0eef2; }
+.comparison-eyebrow { font-size: .875rem; font-weight: 700; letter-spacing: .12em; color: #9de5de; }
+.comparison-steps, .comparison-selectors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.comparison-steps span { padding: 16px; border-left: 3px solid #247f85; }
+.comparison-steps strong, .comparison small, .comparison-history small { display: block; }
+.comparison small { font-size: .875rem; font-weight: 400; color: #475569; overflow-wrap: anywhere; }
+.comparison-selectors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.comparison-selectors label { display: grid; gap: 8px; font-weight: 600; }
+.comparison-history { list-style: none; padding: 0; margin: 0; }
+.comparison-history li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 16px 0; border-bottom: 1px solid #e2e8f0; }
+.comparison-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.comparison-metrics > div { border: 1px solid #cbd5e1; border-radius: 10px; padding: 20px; display: grid; gap: 4px; }
+.comparison-metrics strong { font-size: 2rem; color: #123f51; }
+.comparison-metrics strong small { display: inline; margin-left: 6px; }
+.comparison-metrics span { font-size: .875rem; }
+.comparison-table-wrap { overflow-x: auto; }
+.comparison-table-wrap table { min-width: 540px; }
+.comparison-change { font-weight: 600; white-space: nowrap; }
+.comparison-change.positive { color: #125d31; }
+.comparison-change.negative { color: #b42318; }
+.comparison-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 650px) { .comparison-metrics { grid-template-columns: repeat(2, 1fr); } .comparison-steps, .comparison-selectors { grid-template-columns: 1fr; } .comparison-hero { padding: 24px; } }
+@media print { .comparison-hero { background: white; color: black; padding: 0; } .comparison-hero p, .comparison-eyebrow { color: black; } .comparison-report { border: 0; box-shadow: none; padding: 0; } .comparison-table-wrap { overflow: visible; } .comparison-table-wrap table { min-width: 0; } .comparison-metrics { break-inside: avoid; } }

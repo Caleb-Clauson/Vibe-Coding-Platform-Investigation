@@ -27,6 +27,16 @@ This is a demonstration. It uses sample, demo, or user-entered measurements only
 
 ## Running the project
 
+## Before-and-after comparisons
+
+Open **Compare Surveys** to save the current readings as a named baseline. Choose **Record follow-up**, enter fresh signal readings for every location, and select **Save and compare**. The comparison preserves the original snapshot and does not replace the active Survey readings. You can also compare two saved snapshots and print the result.
+
+Pairs must have the same coordinates, zone, network name and access point ID. Unmatched or duplicate readings are excluded and counted separately. Positive dB changes mean stronger recorded signal, not a proven speed improvement or proof that a particular change caused it. Fictional readings produce simulated results. Snapshot history is stored only in this browser; unsaved follow-up entries survive section navigation but not a page refresh.
+
+This feature adds survey history and measurement comparisons only. Security risk assessment and range-extender placement remain separate teammate features.
+
+### Local development
+
 ```
 npm install
 npm run dev
