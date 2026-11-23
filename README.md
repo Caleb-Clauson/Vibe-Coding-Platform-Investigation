@@ -25,7 +25,23 @@ This is a demonstration. It uses sample, demo, or user-entered measurements only
 - **Saving:** readings persist across page refreshes using browser local storage. A warning appears if the browser blocks saving.
 - **Sample data:** one clearly fictional reading ("SAMPLE: Front lobby (fictional)") is included for first-time testing.
 
-## Running the project
+## Workspace overview
+
+The Overview screen guides users through recording, exploring and comparing surveys. It includes current reading/network counts, recent snapshots, a confirmed new-survey action and a fictional demo entry point. The responsive workspace uses desktop sidebar navigation and compact navigation on smaller screens.
+
+Export current readings as a SignalSafe JSON file and import them on another device from Overview. Imports are validated before replacement and require confirmation. Exports contain current readings only, not snapshot history or drafts. Keep exported files as backups before clearing browser data.
+
+## Before-and-after comparisons
+
+Open **Compare Surveys** to save the current readings as a named baseline. Choose **Record follow-up**, enter fresh signal readings for every location, and select **Save and compare**. The comparison preserves the original snapshot and does not replace the active Survey readings. You can also compare two saved snapshots and print the result.
+
+Pairs must have the same coordinates, zone, network name and access point ID. Unmatched or duplicate readings are excluded and counted separately. Positive dB changes mean stronger recorded signal, not a proven speed improvement or proof that a particular change caused it. Fictional readings produce simulated results. Snapshot history is stored only in this browser; follow-up drafts are saved separately for recovery after a page refresh.
+
+Follow-up drafts now recover after a refresh in the same browser. A warning appears if browser storage prevents draft saving. Saving or cancelling a follow-up clears its draft. Comparison bars show the magnitude and direction of recorded changes alongside the precise results table.
+
+This feature adds survey history and measurement comparisons only. Security risk assessment and range-extender placement remain separate teammate features. New workspace code is isolated in `DashboardSection.tsx`, `workspace.css`, and the draft/transfer helpers; navigation integration is in `App.tsx`.
+
+### Local development
 
 ```
 npm install
