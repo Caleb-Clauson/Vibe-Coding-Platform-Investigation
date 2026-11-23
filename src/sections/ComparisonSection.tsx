@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMeasurements } from '../context/MeasurementContext';
 import { compareSurveys, parseSnapshots, SNAPSHOT_KEY, type SurveySnapshot } from '../lib/surveyComparison';
+
+import { DRAFT_KEY, parseComparisonDraft } from '../lib/comparisonDraft';
 
 export function ComparisonSection() {
   const { measurements } = useMeasurements();
@@ -11,11 +13,24 @@ export function ComparisonSection() {
   const [snapshots, setSnapshots] = useState(initial.snapshots);
   const [error, setError] = useState(initial.error);
   const [notice, setNotice] = useState('');
-  const [name, setName] = useState('');
+  const [draft] = useState(() => {
+    try { return { value: parseComparisonDraft(localStorage.getItem(DRAFT_KEY)), error: '' }; }
+    catch { return { value: { name: '', following: null, signals: [] as string[] }, error: 'A previous draft could not be read. New edits cannot be saved as a draft until that browser data is repaired.' }; }
+  });
+  const [draftError, setDraftError] = useState(draft.error);
+  const [name, setName] = useState(draft.value.name);
   const [beforeId, setBeforeId] = useState(initial.snapshots[0]?.id ?? '');
   const [afterId, setAfterId] = useState(initial.snapshots[1]?.id ?? '');
-  const [following, setFollowing] = useState<SurveySnapshot | null>(null);
-  const [signals, setSignals] = useState<string[]>([]);
+  const [following, setFollowing] = useState<SurveySnapshot | null>(draft.value.following);
+  const [signals, setSignals] = useState<string[]>(draft.value.signals);
+  useEffect(() => {
+    if (draft.error) return;
+    try {
+      if (name || following) localStorage.setItem(DRAFT_KEY, JSON.stringify({ name, following, signals }));
+      else localStorage.removeItem(DRAFT_KEY);
+      setDraftError('');
+    } catch { setDraftError('Draft could not be saved. Keep this page open until you save your follow-up.'); }
+  }, [name, following, signals, draft.error]);
   const before = snapshots.find(item => item.id === beforeId);
   const after = snapshots.find(item => item.id === afterId);
   const result = before && after && before.id !== after.id ? compareSurveys(before.measurements, after.measurements) : null;
@@ -60,6 +75,8 @@ export function ComparisonSection() {
       <span><strong>Revisit</strong> Enter fresh measurements.</span>
       <span><strong>Compare</strong> See what changed.</span>
     </div>
+    {draftError && <p className="alert alert-error no-print" role="alert">{draftError}</p>}
+    {following && !draftError && <p className="workspace-save-state no-print" role="status">Follow-up draft saved in this browser. You can return after a refresh.</p>}
     {error && <p className="alert alert-error no-print" role="alert">{error}</p>}
     {notice && <p className="alert alert-success no-print" role="status">{notice}</p>}
     <div className="card no-print">
@@ -107,6 +124,7 @@ export function ComparisonSection() {
           <div><strong>{result.average === null ? '—' : `${result.average > 0 ? '+' : ''}${result.average.toFixed(1)}`}<small>dB</small></strong><span>Mean recorded change</span></div>
         </div>
         <p>{result.rows.length} matched pairs. {result.excludedBefore} baseline and {result.excludedAfter} follow-up readings excluded because they are unmatched or ambiguous.</p>
+        {result.rows.length > 0 && <div className="comparison-chart" aria-label="Recorded signal changes"><h4>Change at a glance</h4><p className="reading-meta">Bars show the magnitude of change on a shared scale. Direction is labeled for every location.</p>{result.rows.map((row, index) => <div className="change-chart-row" key={index}><span>{row.before.locationName}</span><div className="change-chart-track" aria-hidden="true"><span className={row.delta < 0 ? 'negative' : 'positive'} style={{ width: `${Math.abs(row.delta) / Math.max(1, ...result.rows.map(item => Math.abs(item.delta))) * 100}%` }} /></div><strong>{row.delta > 0 ? '+' : ''}{row.delta} dB · {row.delta > 0 ? 'Stronger' : row.delta < 0 ? 'Weaker' : 'Unchanged'}</strong></div>)}</div>}
         <div className="comparison-table-wrap"><table className="report-table">
           <thead><tr><th>Location / network</th><th>Before</th><th>After</th><th>Change</th></tr></thead>
           <tbody>{result.rows.map((row, index) => <tr key={index}><td>{row.before.locationName}<small>{row.before.ssid} · {row.before.bssid}</small></td><td>{row.before.signalDbm} dBm</td><td>{row.after.signalDbm} dBm</td><td><span className={`comparison-change ${row.delta > 0 ? 'positive' : row.delta < 0 ? 'negative' : ''}`}>{row.delta > 0 ? '+' : ''}{row.delta} dB · {row.delta > 0 ? 'Stronger' : row.delta < 0 ? 'Weaker' : 'Unchanged'}</span></td></tr>)}</tbody>

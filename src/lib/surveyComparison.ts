@@ -53,7 +53,8 @@ export function parseSnapshots(raw: string | null): SurveySnapshot[] {
         !Array.isArray(item.measurements) || !item.measurements.length) return false;
     return item.measurements.every((reading: Measurement) => {
       if (!reading || typeof reading.id !== 'string' || typeof reading.locationName !== 'string' ||
-          typeof reading.ssid !== 'string' || typeof reading.bssid !== 'string') return false;
+          typeof reading.ssid !== 'string' || typeof reading.bssid !== 'string' ||
+          typeof reading.x !== 'number' || typeof reading.y !== 'number' || typeof reading.signalDbm !== 'number') return false;
       return Boolean(validateMeasurementForm(toFormValues(reading)).input);
     });
   })) throw new Error('Saved survey history could not be read.');
