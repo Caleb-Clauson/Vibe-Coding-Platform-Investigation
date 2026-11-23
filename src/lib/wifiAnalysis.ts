@@ -25,6 +25,10 @@ function normalizeBssid(bssid: string): string {
   return bssid.trim().toUpperCase();
 }
 
+function indoorLocationKey(measurement: Measurement): string {
+  return `${measurement.locationName.trim().toLowerCase()}|${measurement.x}|${measurement.y}`;
+}
+
 type FindingDetails = Pick<WiFiFinding, 'severity' | 'title' | 'description' | 'recommendations'>;
 
 const FINDING_DETAILS: Record<WiFiFindingType, FindingDetails> = {
@@ -75,7 +79,8 @@ const FINDING_DETAILS: Record<WiFiFindingType, FindingDetails> = {
 
 /**
  * Analyze a snapshot without changing measurements or the approved inventory.
- * Findings are grouped by issue type and BSSID, with each affected measurement ID included once.
+ * Unrecognized and parking-lot findings are grouped by BSSID. Indoor coverage is judged per location
+ * from the strongest valid approved reading there, and grouped by location.
  * Call again with the current data after an edit, deletion, or survey replacement.
  */
 export function analyzeWifiMeasurements(
@@ -86,8 +91,8 @@ export function analyzeWifiMeasurements(
   const findings = new Map<string, WiFiFinding>();
   const affectedIds = new Map<string, Set<string>>();
 
-  function addFinding(type: WiFiFindingType, bssid: string, measurementId: string) {
-    const id = `${type}:${bssid}`;
+  function addFinding(type: WiFiFindingType, key: string, context: string, measurementId: string) {
+    const id = `${type}:${key}`;
     let finding = findings.get(id);
     if (!finding) {
       const details = FINDING_DETAILS[type];
@@ -95,7 +100,7 @@ export function analyzeWifiMeasurements(
         id,
         type,
         ...details,
-        description: `${details.description} Access point BSSID: ${bssid}.`,
+        description: `${details.description} ${context}`,
         affectedMeasurementIds: [],
         recommendations: [...details.recommendations],
       };
@@ -109,23 +114,44 @@ export function analyzeWifiMeasurements(
     }
   }
 
+  const approvedIndoorByLocation = new Map<string, Measurement[]>();
+
   for (const measurement of measurements) {
     const bssid = normalizeBssid(measurement.bssid);
     const isApproved = approvedBssids.has(bssid);
 
-    if (!isApproved) addFinding('unrecognized-access-point', bssid, measurement.id);
+    if (!isApproved) {
+      addFinding('unrecognized-access-point', bssid, `Access point BSSID: ${bssid}.`, measurement.id);
+    }
 
     if (measurement.zone === 'Indoor') {
-      const quality = classifyIndoorSignal(measurement.signalDbm);
-      if (quality === 'weak') addFinding('weak-indoor-signal', bssid, measurement.id);
-      if (quality === 'fair') addFinding('fair-indoor-signal', bssid, measurement.id);
+      if (isApproved && isValidSignal(measurement.signalDbm)) {
+        const key = indoorLocationKey(measurement);
+        const group = approvedIndoorByLocation.get(key);
+        if (group) group.push(measurement);
+        else approvedIndoorByLocation.set(key, [measurement]);
+      }
     } else if (
       measurement.zone === 'Parking Lot' &&
       isApproved &&
       isValidSignal(measurement.signalDbm) &&
       measurement.signalDbm > WIFI_THRESHOLDS.parkingLotLeakageDbm
     ) {
-      addFinding('possible-signal-leakage', bssid, measurement.id);
+      addFinding('possible-signal-leakage', bssid, `Access point BSSID: ${bssid}.`, measurement.id);
+    }
+  }
+
+  for (const [key, readings] of approvedIndoorByLocation) {
+    const strongest = Math.max(...readings.map((reading) => reading.signalDbm));
+    const quality = classifyIndoorSignal(strongest);
+    if (quality !== 'weak' && quality !== 'fair') continue;
+
+    const type: WiFiFindingType = quality === 'weak' ? 'weak-indoor-signal' : 'fair-indoor-signal';
+    const location = readings[0].locationName.trim();
+    for (const reading of readings) {
+      if (classifyIndoorSignal(reading.signalDbm) === quality) {
+        addFinding(type, key, `Location: ${location}.`, reading.id);
+      }
     }
   }
 

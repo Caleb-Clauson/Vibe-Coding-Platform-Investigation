@@ -27,12 +27,12 @@ export const DEMO_MEASUREMENTS: Measurement[] = [
   { id: 'demo-02', locationName: 'Dining room', zone: 'Indoor', x: 45, y: 35, ssid: 'MapleStreet-Staff', bssid: '02:A1:B2:C3:D4:01', signalDbm: -55 },
   { id: 'demo-03', locationName: 'Kitchen', zone: 'Indoor', x: 72, y: 58, ssid: 'MapleStreet-Staff', bssid: '02:A1:B2:C3:D4:01', signalDbm: -63 },
   { id: 'demo-04', locationName: 'Back office', zone: 'Indoor', x: 88, y: 14, ssid: 'MapleStreet-Staff', bssid: '02:A1:B2:C3:D4:01', signalDbm: -79 },
-  { id: 'demo-05', locationName: 'Storage room', zone: 'Indoor', x: 60, y: 90, ssid: 'MapleStreet-Staff', bssid: '02:A1:B2:C3:D4:01', signalDbm: -83 },
+  { id: 'demo-05', locationName: 'Storage room', zone: 'Indoor', x: 22, y: 65, ssid: 'MapleStreet-Staff', bssid: '02:A1:B2:C3:D4:01', signalDbm: -83 },
   { id: 'demo-06', locationName: 'Parking spot A (entrance)', zone: 'Parking Lot', x: 8, y: 92, ssid: 'MapleStreet-Guest', bssid: '02:A1:B2:C3:D4:02', signalDbm: -52 },
   { id: 'demo-07', locationName: 'Parking spot B (center)', zone: 'Parking Lot', x: 42, y: 96, ssid: 'MapleStreet-Guest', bssid: '02:A1:B2:C3:D4:02', signalDbm: -58 },
   { id: 'demo-08', locationName: 'Parking spot C (rear)', zone: 'Parking Lot', x: 86, y: 82, ssid: 'MapleStreet-Guest', bssid: '02:A1:B2:C3:D4:02', signalDbm: -64 },
   { id: 'demo-09', locationName: 'Dining room east wall', zone: 'Indoor', x: 80, y: 40, ssid: 'Unknown-Network-07', bssid: '02:FF:EE:DD:CC:99', signalDbm: -51 },
-  { id: 'demo-10', locationName: 'Parking lot east edge', zone: 'Parking Lot', x: 96, y: 60, ssid: 'Unknown-Network-07', bssid: '02:FF:EE:DD:CC:99', signalDbm: -66 },
+  { id: 'demo-10', locationName: 'Parking lot east edge', zone: 'Parking Lot', x: 96, y: 90, ssid: 'Unknown-Network-07', bssid: '02:FF:EE:DD:CC:99', signalDbm: -66 },
 ];
 
 const COMPARED_FIELDS = ['id', 'locationName', 'zone', 'x', 'y', 'ssid', 'bssid', 'signalDbm'] as const;

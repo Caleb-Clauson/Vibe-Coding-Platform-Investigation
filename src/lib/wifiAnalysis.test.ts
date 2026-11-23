@@ -26,6 +26,10 @@ function findingTypes(measurements: Measurement[]) {
   return analyze(measurements).map((finding) => finding.type).sort();
 }
 
+function inAnyOrder<T>(items: readonly T[]): T[] {
+  return [...items].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+}
+
 describe('indoor signal thresholds', () => {
   const cases = [
     [-120, 'weak'],
@@ -114,7 +118,7 @@ describe('approved inventory matching', () => {
 
   it('checks unrecognized APs in either zone and independently of signal quality', () => {
     assert.deepEqual(findingTypes([reading({ bssid: '02:FF:EE:DD:CC:99', signalDbm: -80 })]), [
-      'unrecognized-access-point', 'weak-indoor-signal',
+      'unrecognized-access-point',
     ]);
     assert.deepEqual(findingTypes([
       reading({ zone: 'Parking Lot', bssid: '02:FF:EE:DD:CC:99', signalDbm: -80 }),
@@ -143,6 +147,55 @@ describe('approved inventory matching', () => {
   });
 });
 
+describe('indoor coverage by location', () => {
+  it('reports no weak coverage when a strong approved reading shares the location', () => {
+    assert.deepEqual(analyze([
+      reading({ id: 'strong', signalDbm: -55 }),
+      reading({ id: 'weak', signalDbm: -80 }),
+    ]), []);
+  });
+
+  it('reports only the unrecognized AP when a weak unrecognized reading shares a location with a strong approved one', () => {
+    assert.deepEqual(findingTypes([
+      reading({ id: 'strong', signalDbm: -55 }),
+      reading({ id: 'weak', signalDbm: -80, bssid: '02:FF:EE:DD:CC:99' }),
+    ]), ['unrecognized-access-point']);
+  });
+
+  it('lists a location once in weak coverage when all of its approved readings are weak', () => {
+    const findings = analyze([
+      reading({ id: 'a', signalDbm: -80 }),
+      reading({ id: 'b', signalDbm: -85 }),
+    ]).filter((finding) => finding.type === 'weak-indoor-signal');
+    assert.equal(findings.length, 1);
+    assert.deepEqual(findings[0].affectedMeasurementIds, ['a', 'b']);
+  });
+
+  it('matches location names case-insensitively with surrounding spaces ignored', () => {
+    const findings = analyze([
+      reading({ id: 'a', locationName: 'Storage Room', signalDbm: -80 }),
+      reading({ id: 'b', locationName: '  storage room ', signalDbm: -85 }),
+    ]);
+    assert.equal(findings.length, 1);
+    assert.deepEqual(findings[0].affectedMeasurementIds, ['a', 'b']);
+  });
+
+  it('keeps same-named locations at different map positions separate', () => {
+    const findings = analyze([
+      reading({ id: 'a', signalDbm: -80 }),
+      reading({ id: 'b', signalDbm: -85, x: 51 }),
+    ]);
+    assert.deepEqual(findings.map((finding) => finding.affectedMeasurementIds), [['a'], ['b']]);
+  });
+
+  it('makes no coverage claim without a valid approved reading', () => {
+    assert.deepEqual(analyze([reading({ signalDbm: NaN })]), []);
+    assert.deepEqual(findingTypes([
+      reading({ bssid: '02:FF:EE:DD:CC:99', signalDbm: -85 }),
+    ]), ['unrecognized-access-point']);
+  });
+});
+
 describe('finding accuracy and duplicate prevention', () => {
   it('returns no findings for an empty survey', () => {
     assert.deepEqual(analyze([]), []);
@@ -150,11 +203,13 @@ describe('finding accuracy and duplicate prevention', () => {
 
   it('matches the exact affected IDs in Caleb\'s unchanged demo survey', () => {
     const findings = analyze(DEMO_MEASUREMENTS);
-    assert.deepEqual(findings.map(({ type, affectedMeasurementIds }) => ({ type, affectedMeasurementIds })), [
-      { type: 'weak-indoor-signal', affectedMeasurementIds: ['demo-04', 'demo-05'] },
+    const summary = findings.map(({ type, affectedMeasurementIds }) => ({ type, affectedMeasurementIds }));
+    assert.deepEqual(inAnyOrder(summary), inAnyOrder([
+      { type: 'weak-indoor-signal', affectedMeasurementIds: ['demo-04'] },
+      { type: 'weak-indoor-signal', affectedMeasurementIds: ['demo-05'] },
       { type: 'possible-signal-leakage', affectedMeasurementIds: ['demo-06', 'demo-07', 'demo-08'] },
       { type: 'unrecognized-access-point', affectedMeasurementIds: ['demo-09', 'demo-10'] },
-    ]);
+    ]));
   });
 
   it('groups repeated observations of one AP and includes each measurement ID only once', () => {
@@ -179,12 +234,12 @@ describe('finding accuracy and duplicate prevention', () => {
   it('keeps different issue types separate for the same BSSID', () => {
     const findings = analyze([
       reading({ id: 'weak', signalDbm: -80 }),
-      reading({ id: 'fair', signalDbm: -70 }),
+      reading({ id: 'fair', signalDbm: -70, x: 20 }),
       reading({ id: 'outside', zone: 'Parking Lot', signalDbm: -50 }),
     ]);
     assert.equal(findings.length, 3);
     assert.equal(new Set(findings.map((finding) => finding.id)).size, 3);
-    assert.deepEqual(findings.map((finding) => finding.affectedMeasurementIds), [['weak'], ['fair'], ['outside']]);
+    assert.deepEqual(inAnyOrder(findings.map((finding) => finding.affectedMeasurementIds)), inAnyOrder([['weak'], ['fair'], ['outside']]));
   });
 
   it('does not duplicate findings when the approved inventory contains duplicate entries', () => {
@@ -241,11 +296,11 @@ describe('finding accuracy and duplicate prevention', () => {
       'unrecognized-access-point': 'medium',
     };
     const findings = analyze([...DEMO_MEASUREMENTS, reading({ id: 'fair', signalDbm: -67 })]);
-    assert.equal(findings.length, 4);
+    assert.equal(findings.length, 5);
     for (const finding of findings) {
       assert.equal(finding.severity, expectedSeverities[finding.type]);
       assert.ok(finding.title.length > 0);
-      assert.match(finding.description, /BSSID:/);
+      assert.match(finding.description, /BSSID:|Location:/);
       assert.ok(finding.affectedMeasurementIds.length > 0);
       assert.ok(finding.recommendations.length > 0);
       assert.ok(finding.recommendations.every((recommendation) => recommendation.length > 0));
